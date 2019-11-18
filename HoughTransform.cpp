@@ -26,8 +26,29 @@ int main()
     return 0;
 }
 
+void on_trackbar(int, void*)
+{
+    /* Performs the Hough Line Detection and is called when slider changes */
+    Mat triangle_copy = triangles.clone();
+    Mat edges, grayScaledTriangles, lines;
+    cvtColor(triangle_copy, grayScaledTriangles, COLOR_BGR2GRAY);
+
+    GaussianBlur(grayScaledTriangles, grayScaledTriangles, Size(5,5), 30);
+
+    Canny(grayScaledTriangles, edges, 50, 200);
+    cvtColor(edges, lines, COLOR_GRAY2BGR);
+    
+    std::vector<Vec4i> hough_lines;
+    HoughLinesP(edges, hough_lines, 1, CV_PI/180, thres, minline, maxgap);
+
+    addLines(hough_lines, triangle_copy);
+
+    showImage("lines", triangle_copy);
+}
+
 void addLines(std::vector<Vec4i> hough_lines, Mat &outImage)
 {
+    /* Use Hough Transform to detect lines on the edge detected gray image */
     for (auto i = 0; i < hough_lines.size(); ++i)
     {
         const auto currentLine = hough_lines[i];
@@ -35,34 +56,12 @@ void addLines(std::vector<Vec4i> hough_lines, Mat &outImage)
     }
 }
 
-void on_trackbar(int, void*)
-{
-    Mat edges, grayScaledTriangles, lines;
-    cvtColor(triangles, grayScaledTriangles, COLOR_BGR2GRAY);
-
-    GaussianBlur(grayScaledTriangles, grayScaledTriangles, Size(5,5), 30);
-
-    // auto thres = getTrackbarPos("thres", "lines");
-    // auto minLine = getTrackbarPos("Min Line Length", "lines");
-    // auto maxLineGap = getTrackbarPos("Max Line Gap", "lines");
-
-    Canny(grayScaledTriangles, edges, 50, 200);
-    cvtColor(edges, lines, COLOR_GRAY2BGR);
-    
-    //std::cout << thres << std::endl;
-    std::vector<Vec4i> hough_lines;
-    HoughLinesP(edges, hough_lines, 1, CV_PI/180, thres, minline, maxgap);
-
-    addLines(hough_lines, triangles);
-
-    showImage("lines", triangles);
-}
-
 void createTrackbars(const char* winName)
 {
-    //createTrackbar("Threshold", winName, &thres, 300, on_trackbar);
+    /* Track the threshold, min line and max gap on the slider and call on_trackbar to make changes*/
+    createTrackbar("Threshold", winName, &thres, 300, on_trackbar);
     createTrackbar("Min Line Length", winName, &minline, 300, on_trackbar);
-    //createTrackbar("Max Line Gap", winName, &maxgap, 300, on_trackbar);
+    createTrackbar("Max Line Gap", winName, &maxgap, 300, on_trackbar);
 }
 
 void showImage(const char* name, Mat& image, bool track)
