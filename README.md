@@ -1,2 +1,2 @@
-# Opencv_tutorials
+Refresher on C++
 Learning OpenCV with Emre
